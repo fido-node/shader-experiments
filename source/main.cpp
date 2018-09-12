@@ -8,10 +8,16 @@
 #include "SDL.h"
 #include "glad/glad.h"
 
+GLuint elements[] = {
+        0, 1, 2,
+        2, 3, 0
+};
+
 float vertices[] = {
-        0.0f,  0.5f, 1.0f, 0.0f, 0.0f, // Vertex 1: Red
-        0.5f, -0.5f, 0.0f, 1.0f, 0.0f, // Vertex 2: Green
-        -0.5f, -0.5f, 0.0f, 0.0f, 1.0f  // Vertex 3: Blue
+        -0.5f,  0.5f, 1.0f, 0.0f, 0.0f, // Top-left
+        0.5f,  0.5f, 0.0f, 1.0f, 0.0f, // Top-right
+        0.5f, -0.5f, 0.0f, 0.0f, 1.0f, // Bottom-right
+        -0.5f, -0.5f, 1.0f, 1.0f, 1.0f  // Bottom-left
 };
 
 auto t_start = std::chrono::high_resolution_clock::now();
@@ -90,6 +96,14 @@ int main(int argc, char *argv[]) {
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
 
+    GLuint ebo;
+    glGenBuffers(1, &ebo);
+
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER,
+                 sizeof(elements), elements, GL_STATIC_DRAW);
+
+
     GLuint vertexShader = createAndCompileShader(GL_VERTEX_SHADER, vertexSource);
     GLuint fragmentShader = createAndCompileShader(GL_FRAGMENT_SHADER, fragmentSource);
 
@@ -124,8 +138,7 @@ int main(int argc, char *argv[]) {
         glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
 
-        // Draw a triangle from the 3 vertices
-        glDrawArrays(GL_TRIANGLES, 0, 3);
+        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
 
         SDL_GL_SwapWindow(window);
