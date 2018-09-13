@@ -7,6 +7,10 @@
 
 #include "SDL.h"
 #include "glad/glad.h"
+#include "glm/glm.hpp"
+#include "glm/gtc/matrix_transform.hpp"
+#include "glm/gtc/type_ptr.hpp"
+
 
 GLuint elements[] = {
         0, 1, 2,
@@ -14,10 +18,10 @@ GLuint elements[] = {
 };
 
 float vertices[] = {
-        -0.5f,  0.5f, 1.0f, 0.0f, 0.0f, // Top-left
-        0.5f,  0.5f, 0.0f, 1.0f, 0.0f, // Top-right
-        0.5f, -0.5f, 0.0f, 0.0f, 1.0f, // Bottom-right
-        -0.5f, -0.5f, 1.0f, 1.0f, 1.0f  // Bottom-left
+        -1.0f, 1.0f, 1.0f, 0.0f, 0.0f, // Top-left
+        1.0f, 1.0f, 0.0f, 1.0f, 0.0f, // Top-right
+        1.0f, -1.0f, 0.0f, 0.0f, 1.0f, // Bottom-right
+        -1.0f, -1.0f, 1.0f, 1.0f, 1.0f  // Bottom-left
 };
 
 auto t_start = std::chrono::high_resolution_clock::now();
@@ -46,20 +50,27 @@ static GLuint createAndCompileShader(GLenum type, const char *source) {
 
 
 // Shader sources
-const GLchar* vertexSource = R"glsl(
+const GLchar *vertexSource = R"glsl(
     #version 330 core
+
     in vec2 position;
     in vec3 color;
+
     out vec3 Color;
+    uniform mat4 model;
+    uniform mat4 view;
+    uniform mat4 proj;
+    uniform mat4 scale;
     void main()
     {
         Color = color;
-        gl_Position = vec4(position, 0.0, 1.0);
+        gl_Position = proj * view * scale * model * vec4(position, 0.0, 1.0);
     }
 )glsl";
 
-const GLchar* fragmentSource = R"glsl(
+const GLchar *fragmentSource = R"glsl(
     #version 330 core
+
     in vec3 Color;
     out vec4 outColor;
     void main()
@@ -69,7 +80,7 @@ const GLchar* fragmentSource = R"glsl(
 )glsl";
 
 
-int main(int argc, char *argv[]) {
+SDL_Window *init_window() {
     SDL_Init(SDL_INIT_EVERYTHING);
 
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
@@ -77,32 +88,50 @@ int main(int argc, char *argv[]) {
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 2);
     SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 8);
 
-    SDL_Window *window = SDL_CreateWindow("OpenGL", 100, 100, 800, 600, SDL_WINDOW_OPENGL);
-
-    SDL_GLContext context = SDL_GL_CreateContext(window);
-
-    gladLoadGL();
+    return SDL_CreateWindow("OpenGL", 100, 100, 1280, 720, SDL_WINDOW_OPENGL);
+}
 
 
+GLuint bootstrap_vao() {
     GLuint vao;
     glGenVertexArrays(1, &vao);
 
     glBindVertexArray(vao);
+    return vao;
+}
 
-
+GLuint bootstrap_vbo(float vertices[], int size) {
     GLuint vbo;
     glGenBuffers(1, &vbo);
     glBindBuffer(GL_ARRAY_BUFFER, vbo);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, size, vertices, GL_STATIC_DRAW);
+    return vbo;
+}
 
 
+GLuint bootstrap_ebo(GLuint elements[], int size) {
     GLuint ebo;
     glGenBuffers(1, &ebo);
 
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER,
-                 sizeof(elements), elements, GL_STATIC_DRAW);
+                 size, elements, GL_STATIC_DRAW);
+    return ebo;
+}
 
+
+int main(int argc, char *argv[]) {
+
+    auto t_start = std::chrono::high_resolution_clock::now();
+
+    SDL_Window *window = init_window();
+    SDL_GLContext context = SDL_GL_CreateContext(window);
+
+    gladLoadGL();
+
+    GLuint vao = bootstrap_vao();
+    GLuint vbo = bootstrap_vbo(vertices, sizeof(vertices));
+    GLuint ebo = bootstrap_ebo(elements, sizeof(elements));
 
     GLuint vertexShader = createAndCompileShader(GL_VERTEX_SHADER, vertexSource);
     GLuint fragmentShader = createAndCompileShader(GL_FRAGMENT_SHADER, fragmentSource);
@@ -122,7 +151,34 @@ int main(int argc, char *argv[]) {
 
     GLint colAttrib = glGetAttribLocation(shaderProgram, "color");
     glEnableVertexAttribArray(colAttrib);
-    glVertexAttribPointer(colAttrib, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), (void*)(2 * sizeof(GLfloat)));
+    glVertexAttribPointer(colAttrib, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), (void *) (2 * sizeof(GLfloat)));
+
+
+    GLint uniModel = glGetUniformLocation(shaderProgram, "model");
+
+    // Set up projection
+    glm::mat4 view = glm::lookAt(
+            glm::vec3(0.0f, 2.0f, 1.0f),
+            glm::vec3(0.0f, 0.0f, 0.0f),
+            glm::vec3(0.0f, 0.0f, 1.0f)
+    );
+    GLint uniView = glGetUniformLocation(shaderProgram, "view");
+    glUniformMatrix4fv(uniView, 1, GL_FALSE, glm::value_ptr(view));
+
+    glm::mat4 scale = glm::mat4(1.0f);
+    scale = glm::scale(
+            scale,
+            glm::vec3(0.05f, 0.05f, 1.0f)
+    );
+
+    GLint uniScale = glGetUniformLocation(shaderProgram, "scale");
+    glUniformMatrix4fv(uniScale, 1, GL_FALSE, glm::value_ptr(scale));
+
+
+    glm::mat4 proj =
+            glm::perspective(glm::radians(45.0f), 1280.0f / 720.0f, 0.0f, 10.0f);
+    GLint uniProj = glGetUniformLocation(shaderProgram, "proj");
+    glUniformMatrix4fv(uniProj, 1, GL_FALSE, glm::value_ptr(proj));
 
 
     SDL_Event windowEvent;
@@ -138,8 +194,23 @@ int main(int argc, char *argv[]) {
         glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
 
-        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+        // Calculate transformation
+        auto t_now = std::chrono::high_resolution_clock::now();
+        float time = std::chrono::duration_cast<std::chrono::duration<float>>(t_now - t_start).count();
 
+
+        for (int i = -10; i < 10; ++i) {
+            for (int j = -5; j < 5; ++j) {
+                glm::mat4 model = glm::translate(
+                        glm::mat4(1.0f),
+                        glm::vec3((i * 3.0f) + 1.0f, (j * 3.0f) + 2.0f,
+                                  sin(time + (i * 1.0f + j * 1.0f) / 2) * 0.1f)
+                );
+                glUniformMatrix4fv(uniModel, 1, GL_FALSE, glm::value_ptr(model));
+                glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+
+            }
+        }
 
         SDL_GL_SwapWindow(window);
     }
@@ -148,8 +219,8 @@ int main(int argc, char *argv[]) {
     glDeleteShader(fragmentShader);
     glDeleteShader(vertexShader);
 
+    glDeleteBuffers(1, &ebo);
     glDeleteBuffers(1, &vbo);
-
     glDeleteVertexArrays(1, &vao);
 
     SDL_GL_DeleteContext(context);

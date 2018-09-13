@@ -23,6 +23,9 @@ set(CMAKE_CXX_STANDARD 11)
 find_package(SDL2 REQUIRED)
 find_package(OpenGL REQUIRED)
 
+find_package( glm REQUIRED )
+
+
 include_directories(
         ${SDL2_INCLUDE_DIR}
         ${OPENGL_INCLUDE_DIR}
@@ -35,6 +38,7 @@ target_link_libraries(
         ${PROJECT_NAME}
         ${SDL2_LIBRARY}
         ${CMAKE_DL_LIBS}
+        glm
         #        ${OPENGL_LIBRARIES}
         ${GLAD_LIBRARY}
 )
