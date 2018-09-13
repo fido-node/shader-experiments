@@ -54,7 +54,7 @@ const GLchar *vertexSource = R"glsl(
     #version 330 core
 
     in vec2 position;
-    in vec3 color;
+    uniform vec3 color;
 
     out vec3 Color;
     uniform mat4 model;
@@ -149,9 +149,12 @@ int main(int argc, char *argv[]) {
     glEnableVertexAttribArray(posAttrib);
     glVertexAttribPointer(posAttrib, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), 0);
 
-    GLint colAttrib = glGetAttribLocation(shaderProgram, "color");
-    glEnableVertexAttribArray(colAttrib);
-    glVertexAttribPointer(colAttrib, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), (void *) (2 * sizeof(GLfloat)));
+    GLint uniColor = glGetUniformLocation(shaderProgram, "color");
+    glUniform3f(uniColor, 1.0f, 0.0f, 0.0f);
+
+//    GLint colAttrib = glGetAttribLocation(shaderProgram, "color");
+//    glEnableVertexAttribArray(colAttrib);
+//    glVertexAttribPointer(colAttrib, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), (void *) (2 * sizeof(GLfloat)));
 
 
     GLint uniModel = glGetUniformLocation(shaderProgram, "model");
@@ -198,14 +201,16 @@ int main(int argc, char *argv[]) {
         auto t_now = std::chrono::high_resolution_clock::now();
         float time = std::chrono::duration_cast<std::chrono::duration<float>>(t_now - t_start).count();
 
-
-        for (int i = -10; i < 10; ++i) {
-            for (int j = -5; j < 5; ++j) {
+        //x axis; below zero - right; above zero - left
+        for (int i = -50; i < 50; ++i) {
+            //y axis; below zero - far; above zero - near
+            for (int j = -50; j < 10; ++j) {
                 glm::mat4 model = glm::translate(
                         glm::mat4(1.0f),
                         glm::vec3((i * 3.0f) + 1.0f, (j * 3.0f) + 2.0f,
                                   sin(time + (i * 1.0f + j * 1.0f) / 2) * 0.1f)
                 );
+                glUniform3f(uniColor, (sin(time + (i * 1.0f + j * 1.0f) / 2) * 0.7f) / 2.0f, 0.0f, 0.0f);
                 glUniformMatrix4fv(uniModel, 1, GL_FALSE, glm::value_ptr(model));
                 glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
