@@ -210,7 +210,10 @@ int main(int argc, char *argv[]) {
                         glm::vec3((i * 3.0f) + 1.0f, (j * 3.0f) + 2.0f,
                                   sin(time + (i * 1.0f + j * 1.0f) / 2) * 0.1f)
                 );
-                glUniform3f(uniColor, (sin(time + (i * 1.0f + j * 1.0f) / 2) * 0.7f) / 2.0f, 0.0f, 0.0f);
+                glUniform3f(uniColor,
+                            (sin(time + (i * 1.0f + j * 1.0f) / 2) * 1.0f) / 2.0f,
+                            (sin(time + (i * 1.0f + j * -1.0f) / 4) * 1.0f) >= 0.95f ? 1.0f : 0.0f,
+                            (sin(time + (i * 1.0f + j * -1.0f) / 4) * 1.0f) >= 0.95f ? 1.0f : 0.0f);
                 glUniformMatrix4fv(uniModel, 1, GL_FALSE, glm::value_ptr(model));
                 glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
