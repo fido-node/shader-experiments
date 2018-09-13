@@ -152,11 +152,6 @@ int main(int argc, char *argv[]) {
     GLint uniColor = glGetUniformLocation(shaderProgram, "color");
     glUniform3f(uniColor, 1.0f, 0.0f, 0.0f);
 
-//    GLint colAttrib = glGetAttribLocation(shaderProgram, "color");
-//    glEnableVertexAttribArray(colAttrib);
-//    glVertexAttribPointer(colAttrib, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), (void *) (2 * sizeof(GLfloat)));
-
-
     GLint uniModel = glGetUniformLocation(shaderProgram, "model");
 
     // Set up projection
