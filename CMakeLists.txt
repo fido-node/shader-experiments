@@ -11,7 +11,6 @@ set(GLAD_LIBRARY_C ${PROJECT_SOURCE_DIR}/glad-lib/src/glad.c)
 set(GLAD_LIBRARY_H ${PROJECT_SOURCE_DIR}/glad-lib/include/glad/glad.h)
 
 
-
 set(SOURCE_FILES
         source/main.cpp
         ${GLAD_LIBRARY_H}
@@ -19,11 +18,10 @@ set(SOURCE_FILES
         )
 set(CMAKE_CXX_STANDARD 11)
 
-
-find_package(SDL2 REQUIRED)
 find_package(OpenGL REQUIRED)
+find_package(SDL2 REQUIRED)
 
-find_package( glm REQUIRED )
+find_package(glm REQUIRED)
 
 
 include_directories(
